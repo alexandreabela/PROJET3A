@@ -1,23 +1,29 @@
-# PROJET3A
+# Improving DQN Exploration in Pokémon
 
-## Environnement Pokemon
+## Introduction
+Some algorithms developed in the field of deep reinforcement learning aimed at training an agent capable of playing video games can sometimes be inefficient. For complex games like Pokémon or MONTEZUMA’S REVENGE, traditional methods may struggle to maintain a high level of exploration over extended gameplay or to choose when to explore new areas or situations. In such cases, it's often necessary to enhance exploration incentives for the agent to learn how to navigate its environment effectively. In this project, we focused on incorporating a GAN, specifically the discriminator part of a GAN trained on images encountered during agent training, to study its impact on the behavior of a DQN agent.
 
-### Choix de la méthode pour KNN
-J'ai choisi, la méthode implémentée plutôt que celle de l'env original parce qu'on ne peut pas modifier la mémoire avec la méthode originelle. En effet, dans le code d'origine, lorsqu'on a rempli la mémoire, on est bloqué donc dans leur code ce qui est fait c'est une réinitialisation. Je n'aimais pas trop ça du coup j'ai préféré coder le truc à la main, ou cette fois lorsqu'on est plein on remplace les plus vieux, etc... J'ai comparé les méthodes (cf resultats en dessous), la notre est évidemment bien plus lente pour le knn mais bcp plus rapide pour l'ajout d'image. En fait celle de base construit un graphe knn lors de l'ajout.
+## Methodology
+### Pokémon Environment
+The Pokémon environment was created using the PyBOY emulator, which allows emulation of the game from a .rom file on a PC. Each state in the environment consists of a screenshot of the game reduced to a size of 120x120 pixels and a vector containing information such as Pokémon health points ratio, sum of Pokémon experience, number of badges obtained, and number of different captured Pokémon.
 
-#### Résultats memory speed tests : 
-100%|██████████████████████████████████████████████████████████████████████████| 20000/20000 [00:19<00:00, 1017.66it/s]  
-Custom filling time : 19.674415826797485  
-100%|████████████████████████████████████████████████████████████████████████████| 20000/20000 [45:23<00:00,  7.34it/s]  
-Opt filling time : 2723.476750612259  
-Custom search : 31.21134901046753  
-Opt search : 0.3584418296813965  
-[[[152.10453916]]] [[11381.666]] [[0]] [[4070]]  
+### DQN Implementation and Training
+Initially, we implemented the DQN algorithm from scratch using PyTorch. The input to the DQN consists of a memory of 4 frames, where each frame is a grayscale screenshot of the current state and the three previous states. We also implemented a Replay Buffer for training the network. Subsequently, we switched to using RLlib, a reinforcement learning library that provides more optimization and flexibility. RLlib allows for multi-agent training and more efficient implementation of the Replay Buffer.
 
-### Choix des actions
-J'ai décidé d'ajouter l'action "0: ne rien faire", parce que lors des cinématiques de combat ou de discussion, avec le tick de pyboy il faut attendre bcp de frames avant d'avoir vraiment une action à faire, je me suis dit que c'était mieux si l'agent pouvait apprendre à ne rien faire dans ces moments là (comme nous on ferait).
+### GAN Implementation and Training
+The GAN was implemented to train a classifier for "novelty" in an unsupervised manner. Images encountered during DQN training were used to train the GAN to generate game images.
 
-UPDATE:
-En fait plutôt que de faire ça on peut aussi attendre X ticks avant de renvoyer un nouvel état. 24 est dans le modèle initial. J'ai testé avec le script test_tick.py et j'ai l'impression que pour les combats c'est 48 ticks. Donc j'ai mis 48 dans le code.
+### DQN + GAN Implementation and Training
+We integrated the GAN into the DQN framework to improve exploration. A custom DQN class was created, inheriting from the DQN algorithm and the DQNTorchPolicy, to incorporate GAN exploration. The agent's behavior was modified based on the discriminator's classification of whether a state is "new" or not.
 
-## DQN
+## Metrics and Results
+To evaluate our agent's exploration, we used heatmaps to see how the a agent interacted in his environment during training as oresented in the following map : 
+<div style="text-align:center;">
+    <img src="graphs/heatmap_dqn_gan.png" width="500"/>
+</div>
+
+## Future Improvements
+1. **Enhancing GAN Discriminator Performance**: Increase the size of the experience database and explore methods to improve convergence.
+2. **Improving DQN by Transitioning to a CNN**: Transitioning to a convolutional neural network may improve agent performance as the classic DQN we used in RLLib is only a one hidden layer NN.
+3. **Optimizing RLlib Hyperparameters using the Tune Class**: Utilizing hyperparameter optimization techniques provided by RLlib's Tune class.
+4. **Increasing Iterations per Agent**: Improve DQN performance by increasing the number of training iterations.
